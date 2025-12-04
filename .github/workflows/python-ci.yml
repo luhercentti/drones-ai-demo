@@ -3,13 +3,8 @@ name: Python Services CI
 on:
   pull_request:
     branches: [main, develop]
-    paths:
-      - 'python-services/**'
-      - '.github/workflows/python-ci.yml'
   push:
     branches: [main, develop]
-    paths:
-      - 'python-services/**'
 
 jobs:
   lint-and-test:
