@@ -51,7 +51,7 @@ describe('GPS Utils', () => {
 
     it('should calculate distance for nearby points', () => {
       const coord1: Coordinates = { latitude: 40.7128, longitude: -74.006 };
-      const coord2: Coordinates = { latitude: 40.7580, longitude: -73.9855 };
+      const coord2: Coordinates = { latitude: 40.758, longitude: -73.9855 };
       const distance = calculateDistance(coord1, coord2);
       expect(distance).toBeGreaterThan(6);
       expect(distance).toBeLessThan(7);
