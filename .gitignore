@@ -29,6 +29,7 @@ coverage/
 .nyc_output/
 htmlcov/
 .pytest_cache/
+coverage.xml
 
 # Logs
 *.log

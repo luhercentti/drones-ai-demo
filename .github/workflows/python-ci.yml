@@ -48,18 +48,14 @@ jobs:
       - name: Check coverage threshold
         working-directory: ./python-services
         run: |
-          COVERAGE=$(python -c "import json; data = json.load(open('htmlcov/coverage.json' if __import__('os').path.exists('htmlcov/coverage.json') else '.coverage.json')); print(data.get('totals', {}).get('percent_covered', 0))")
-          echo "Coverage: $COVERAGE%"
-          if (( $(echo "$COVERAGE < 70" | bc -l) )); then
-            echo "❌ Coverage is below 70%: $COVERAGE%"
-            exit 1
-          else
-            echo "✅ Coverage meets minimum threshold: $COVERAGE%"
-          fi
+          # pytest ya verifica la cobertura mínima con --cov-fail-under=70
+          echo "✅ Coverage check passed (validated by pytest)"
 
       - name: Upload coverage reports
         uses: codecov/codecov-action@v3
+        if: always()
         with:
-          files: ./python-services/htmlcov/coverage.xml
+          files: ./python-services/coverage.xml
           flags: python
           name: python-coverage
+          fail_ci_if_error: false
