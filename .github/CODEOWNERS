@@ -1,0 +1,18 @@
+# Backend Team
+/backend/** @drones-ai-team/backend
+
+# Frontend Team
+/frontend/** @drones-ai-team/frontend
+
+# Python Services Team
+/python-services/** @drones-ai-team/backend @drones-ai-team/ai-team
+
+# CI/CD Configuration - DevOps approval required
+/.github/workflows/** @drones-ai-team/devops
+
+# Documentation - All teams can review
+/docs/** @drones-ai-team/backend @drones-ai-team/frontend
+
+# Root configuration files - DevOps approval required
+/.gitignore @drones-ai-team/devops
+/README.md @drones-ai-team/devops

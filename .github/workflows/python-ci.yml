@@ -1,0 +1,65 @@
+name: Python Services CI
+
+on:
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'python-services/**'
+      - '.github/workflows/python-ci.yml'
+  push:
+    branches: [main, develop]
+    paths:
+      - 'python-services/**'
+
+jobs:
+  lint-and-test:
+    name: Python Lint & Test
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+          cache-dependency-path: python-services/requirements.txt
+
+      - name: Install dependencies
+        working-directory: ./python-services
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run flake8
+        working-directory: ./python-services
+        run: flake8 src/ tests/
+
+      - name: Check black formatting
+        working-directory: ./python-services
+        run: black --check src/ tests/
+
+      - name: Run tests with coverage
+        working-directory: ./python-services
+        run: pytest
+
+      - name: Check coverage threshold
+        working-directory: ./python-services
+        run: |
+          COVERAGE=$(python -c "import json; data = json.load(open('htmlcov/coverage.json' if __import__('os').path.exists('htmlcov/coverage.json') else '.coverage.json')); print(data.get('totals', {}).get('percent_covered', 0))")
+          echo "Coverage: $COVERAGE%"
+          if (( $(echo "$COVERAGE < 70" | bc -l) )); then
+            echo "❌ Coverage is below 70%: $COVERAGE%"
+            exit 1
+          else
+            echo "✅ Coverage meets minimum threshold: $COVERAGE%"
+          fi
+
+      - name: Upload coverage reports
+        uses: codecov/codecov-action@v3
+        with:
+          files: ./python-services/htmlcov/coverage.xml
+          flags: python
+          name: python-coverage

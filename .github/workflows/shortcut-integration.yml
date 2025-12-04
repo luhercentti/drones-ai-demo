@@ -1,0 +1,91 @@
+name: Shortcut Integration
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+    types: [opened, synchronize, reopened, closed]
+
+jobs:
+  link-to-shortcut:
+    name: Link commits to Shortcut stories
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Extract Shortcut story ID from commit
+        id: extract_story
+        run: |
+          # Buscar el ID de Shortcut en el mensaje del commit
+          COMMIT_MSG=$(git log -1 --pretty=%B)
+          STORY_ID=$(echo "$COMMIT_MSG" | grep -oP '\[sc-\K[0-9]+' || echo "")
+          
+          if [ -z "$STORY_ID" ]; then
+            echo "⚠️ No se encontró ID de Shortcut en el commit"
+            echo "story_id=" >> $GITHUB_OUTPUT
+            echo "has_story=false" >> $GITHUB_OUTPUT
+          else
+            echo "✅ Story ID encontrado: sc-$STORY_ID"
+            echo "story_id=$STORY_ID" >> $GITHUB_OUTPUT
+            echo "has_story=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Validate Shortcut story ID format
+        if: steps.extract_story.outputs.has_story == 'true'
+        run: |
+          STORY_ID="${{ steps.extract_story.outputs.story_id }}"
+          if ! [[ "$STORY_ID" =~ ^[0-9]+$ ]]; then
+            echo "❌ Formato inválido de Story ID: $STORY_ID"
+            exit 1
+          fi
+
+      - name: Post comment to Shortcut story
+        if: steps.extract_story.outputs.has_story == 'true'
+        env:
+          SHORTCUT_API_TOKEN: ${{ secrets.SHORTCUT_API_TOKEN }}
+          STORY_ID: ${{ steps.extract_story.outputs.story_id }}
+        run: |
+          COMMIT_SHA="${{ github.sha }}"
+          COMMIT_MSG=$(git log -1 --pretty=%B)
+          AUTHOR="${{ github.actor }}"
+          REPO="${{ github.repository }}"
+          BRANCH="${{ github.ref_name }}"
+          
+          COMMENT="🔗 **Commit vinculado desde GitHub**\n\n"
+          COMMENT+="**Commit:** [\`${COMMIT_SHA:0:7}\`](https://github.com/$REPO/commit/$COMMIT_SHA)\n"
+          COMMENT+="**Branch:** \`$BRANCH\`\n"
+          COMMENT+="**Autor:** @$AUTHOR\n"
+          COMMENT+="**Mensaje:** $COMMIT_MSG\n"
+          
+          curl -X POST \
+            -H "Content-Type: application/json" \
+            -H "Shortcut-Token: $SHORTCUT_API_TOKEN" \
+            -d "{\"text\": \"$COMMENT\"}" \
+            "https://api.app.shortcut.com/api/v3/stories/$STORY_ID/comments"
+
+      - name: Check commit message format
+        if: github.event_name == 'pull_request'
+        run: |
+          # Verificar que todos los commits en el PR tengan formato correcto
+          COMMITS=$(git log origin/${{ github.base_ref }}..${{ github.sha }} --pretty=format:"%s")
+          
+          HAS_ERROR=false
+          while IFS= read -r commit; do
+            if ! [[ "$commit" =~ ^\[sc-[0-9]+\] ]]; then
+              echo "❌ Commit sin formato correcto: $commit"
+              echo "   Debe comenzar con [sc-XXXX] donde XXXX es el ID de la historia en Shortcut"
+              HAS_ERROR=true
+            fi
+          done <<< "$COMMITS"
+          
+          if [ "$HAS_ERROR" = true ]; then
+            echo ""
+            echo "📝 Formato requerido: [sc-1234] Tu mensaje de commit"
+            exit 1
+          fi
+          
+          echo "✅ Todos los commits tienen el formato correcto"
