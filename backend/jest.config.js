@@ -17,7 +17,7 @@ module.exports = {
       statements: 70,
     },
   },
-  coverageReporters: ['text', 'lcov', 'html'],
+  coverageReporters: ['text', 'lcov', 'html', 'json-summary'],
   transform: {
     '^.+\\.ts$': 'ts-jest',
   },
