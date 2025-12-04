@@ -2,6 +2,35 @@
 
 ## Errores comunes en GitHub Actions y sus soluciones
 
+### ❌ Error: "npm ci can only install with an existing package-lock.json"
+
+**Síntoma:**
+```
+The `npm ci` command can only install with an existing package-lock.json
+```
+
+**Causa:** Los workflows usan `npm ci` pero el archivo `package-lock.json` no existe en el repositorio.
+
+**Solución Temporal:** Los workflows ahora usan `npm install` automáticamente.
+
+**Solución Permanente (Recomendada):**
+1. Genera los `package-lock.json`:
+   ```bash
+   cd backend
+   npm install
+   git add package-lock.json
+   
+   cd ../frontend
+   npm install
+   git add package-lock.json
+   
+   cd ..
+   git commit -m "[sc-XXXX] Añadir package-lock.json para mejores builds"
+   git push
+   ```
+
+2. Luego cambia los workflows a `npm ci` para builds más rápidos y consistentes.
+
 ### ❌ Error: "Unable to cache dependencies"
 
 **Síntoma:**
